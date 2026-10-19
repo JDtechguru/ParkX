@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ParkX">
+<meta name="theme-color" content="#050709">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>ParkX</title>
+<style>
+  :root{
+    --bg:#050709; --surface:#0D1216; --surface-2:#141B21; --surface-3:#1B242C;
+    --border:#1E2930; --border-2:#2A3942;
+    --text:#F2FBFF; --muted:#A2B6C0; --faint:#62757F;
+    --accent:#00E5FF; --on-accent:#00161C;
+    --good:#5CFFB0; --warn:#FFB86B; --bad:#FF8A8A;
+    --grad:linear-gradient(135deg,#00F0FF,#0096FF);
+    --ease:cubic-bezier(.2,.8,.2,1);
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;
+    --round:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; background:var(--bg); color:var(--text);}
+  body{font-family:var(--font); font-size:16px; -webkit-font-smoothing:antialiased; overscroll-behavior-y:none; -webkit-text-size-adjust:100%;}
+  [hidden]{display:none !important;}
+  button{font-family:inherit; color:inherit; cursor:pointer; -webkit-user-select:none; user-select:none;}
+  body.lock{overflow:hidden;}
+
+  #app{min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; padding:calc(env(safe-area-inset-top) + 8px) 18px calc(env(safe-area-inset-bottom) + 16px);}
+
+  /* header */
+  .hdr{display:flex; align-items:center; gap:12px; height:52px; flex-shrink:0;}
+  .logo{width:40px; height:40px; flex-shrink:0;}
+  .word{font-family:var(--round); font-weight:800; font-size:24px; letter-spacing:2px; flex:1;}
+  .word span{color:var(--accent);}
+  .hbtn{position:relative; width:46px; height:46px; border-radius:50%; border:1px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:center;}
+  .hbtn svg{width:23px; height:23px;}
+  .hbtn b{position:absolute; top:-3px; right:-3px; min-width:21px; height:21px; padding:0 5px; border-radius:11px; background:var(--accent); color:var(--on-accent); font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center;}
+
+  /* stage */
+  .stage{flex:1; display:flex; flex-direction:column; justify-content:center; padding:14px 0;}
+  .card{position:relative; border-radius:30px; padding:22px 20px 20px; background:radial-gradient(120% 90% at 100% 0%,rgba(0,229,255,.16),transparent 60%),var(--surface); border:1px solid var(--border-2); overflow:hidden; animation:rise .5s var(--ease) both;}
+  .card:active{transform:scale(.985);}
+  @keyframes rise{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none}}
+  .c-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .kick{font-size:13px; font-weight:800; letter-spacing:2px; color:var(--accent);}
+  .acc{font-size:13px; font-weight:800; padding:5px 10px; border-radius:20px; border:1px solid currentColor; white-space:nowrap;}
+  .acc.good{color:var(--good);} .acc.ok{color:var(--accent);} .acc.weak{color:var(--warn);}
+  .c-main{display:flex; gap:14px; align-items:flex-end; justify-content:space-between; margin-top:14px;}
+  .c-main > div{min-width:0;}
+  .ago{font-family:var(--round); font-weight:800; font-size:40px; line-height:1.05; letter-spacing:-.5px;}
+  .when{font-size:16px; color:var(--muted); font-weight:600; margin-top:6px;}
+  .thumb{width:84px; height:84px; border-radius:20px; object-fit:cover; flex-shrink:0; border:1px solid var(--border-2); background:var(--surface-2);}
+  .dist{display:flex; align-items:center; gap:10px; margin-top:16px; padding:13px 14px; border-radius:16px; background:rgba(0,0,0,.35); border:1px solid var(--border); font-size:17px; font-weight:700;}
+  .dist svg{width:22px; height:22px; flex-shrink:0;}
+  .dist small{color:var(--muted); font-weight:600; font-size:14px; margin-left:auto;}
+  .note{margin-top:12px; font-size:17px; line-height:1.4; color:var(--text); font-weight:600; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .note.empty{color:var(--faint); font-weight:500;}
+  .empty-card{border-radius:30px; padding:34px 22px; border:2px dashed var(--border-2); text-align:center;}
+  .empty-card svg{width:56px; height:56px; margin-bottom:12px;}
+  .empty-card > b{display:block; font-size:21px; font-weight:800;}
+  .empty-card p{margin:8px 0 0; color:var(--muted); font-size:16px; line-height:1.45;}
+
+  /* big buttons */
+  .actions{display:grid; gap:12px; flex-shrink:0;}
+  .big{position:relative; width:100%; height:92px; border:none; border-radius:28px; display:flex; align-items:center; gap:16px; padding:0 22px; text-align:left; overflow:hidden; transition:transform .15s var(--ease), opacity .2s;}
+  .big:active{transform:scale(.97);}
+  .big .ic{width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .big .ic svg{width:28px; height:28px;}
+  .big .tx b{display:block; font-family:var(--round); font-weight:800; font-size:21px; letter-spacing:.5px;}
+  .big .tx small{display:block; font-size:14px; font-weight:600; margin-top:3px; opacity:.8;}
+  .save{background:var(--grad); color:var(--on-accent); box-shadow:0 14px 40px -14px var(--accent);}
+  .save .ic{background:rgba(0,22,28,.16);}
+  .save.busy::before{content:""; position:absolute; left:22px; top:50%; width:52px; height:52px; margin-top:-26px; border-radius:50%; border:3px solid rgba(0,22,28,.5); animation:ripple 1.2s ease-out infinite;}
+  @keyframes ripple{from{transform:scale(1); opacity:.9} to{transform:scale(2.3); opacity:0}}
+  .save.done .ic{background:#00161C;}
+  .walk{background:var(--text); color:#04161C;}
+  .walk .ic{background:rgba(0,22,28,.1);}
+  .walk:disabled{background:var(--surface-3); color:var(--faint);}
+  .walk:disabled .ic{background:transparent;}
+
+  /* sheets */
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.66); opacity:0; pointer-events:none; transition:opacity .25s; z-index:30;}
+  .overlay.open{opacity:1; pointer-events:auto;}
+  .sheet{position:fixed; left:0; right:0; bottom:0; z-index:31; background:#0A0F13; border-top:1px solid var(--border-2); border-radius:28px 28px 0 0; transform:translateY(105%); transition:transform .35s var(--ease); max-height:92vh; max-height:92dvh; display:flex; flex-direction:column;}
+  .sheet.open{transform:none;}
+  .sh-head{padding:10px 18px 12px; flex-shrink:0;}
+  .grab{width:44px; height:5px; border-radius:3px; background:var(--border-2); margin:0 auto 12px;}
+  .sh-top{display:flex; gap:12px; align-items:center;}
+  .sh-top > div{flex:1; min-width:0;}
+  .sh-title{font-family:var(--round); font-weight:800; font-size:23px;}
+  .sh-sub{font-size:14px; color:var(--muted); margin-top:3px; font-weight:600;}
+  .close{width:42px; height:42px; border-radius:50%; border:1px solid var(--border-2); background:var(--surface); font-size:18px; flex-shrink:0;}
+  .sh-body{padding:4px 18px 14px; overflow-y:auto; -webkit-overflow-scrolling:touch; flex:1;}
+  .sh-foot{padding:12px 18px calc(env(safe-area-inset-bottom) + 14px); border-top:1px solid var(--border); flex-shrink:0; display:flex; gap:10px;}
+  .btn{flex:1; height:58px; border:none; border-radius:18px; font-family:var(--round); font-weight:800; font-size:17px; letter-spacing:.5px;}
+  .btn:active{transform:scale(.97);}
+  .btn.primary{background:var(--grad); color:var(--on-accent);}
+  .btn.light{background:var(--text); color:#04161C;}
+  .btn.ghost{flex:0 0 58px; background:rgba(255,90,90,.08); border:1px solid rgba(255,90,90,.35); color:var(--bad);}
+  .lbl{font-size:12px; font-weight:800; letter-spacing:1.4px; color:var(--faint); margin:16px 0 8px;}
+  .badge-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .badge{font-size:14px; font-weight:800; padding:7px 12px; border-radius:20px; border:1px solid currentColor;}
+  .badge.good{color:var(--good);} .badge.ok{color:var(--accent);} .badge.weak{color:var(--warn);}
+  .refine{font-size:14px; color:var(--muted); font-weight:600; display:flex; align-items:center; gap:7px;}
+  .refine i{width:9px; height:9px; border-radius:50%; background:var(--accent); animation:blink 1s ease-in-out infinite;}
+  @keyframes blink{50%{opacity:.25}}
+  .hint{margin-top:12px; padding:12px 14px; border-radius:14px; background:rgba(255,184,107,.1); border:1px solid rgba(255,184,107,.3); color:#FFD9A8; font-size:14.5px; line-height:1.45;}
+  .field{width:100%; height:56px; border-radius:16px; border:1.5px solid var(--border-2); background:var(--bg); color:var(--text); font-size:17px; font-family:inherit; padding:0 16px; outline:none; -webkit-appearance:none; appearance:none;}
+  .field:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,229,255,.16);}
+  .field::placeholder{color:#4A5C66;}
+  .photo-add{width:100%; height:92px; border-radius:18px; border:2px dashed var(--border-2); background:var(--surface); display:flex; align-items:center; justify-content:center; gap:12px; font-size:17px; font-weight:700; color:var(--muted);}
+  .photo-add svg{width:28px; height:28px;}
+  .photo-add:active{border-color:var(--accent); color:var(--accent);}
+  .photo-box{position:relative;}
+  .photo-box img{width:100%; max-height:300px; object-fit:cover; border-radius:20px; display:block; border:1px solid var(--border-2);}
+  .photo-btns{display:flex; gap:8px; margin-top:10px;}
+  .photo-btns button{flex:1; height:46px; border-radius:14px; border:1px solid var(--border-2); background:var(--surface); font-size:15px; font-weight:700; color:var(--muted);}
+  .coords{font-size:13.5px; color:var(--faint); margin-top:16px; font-variant-numeric:tabular-nums;}
+
+  .row{display:grid; grid-template-columns:60px 1fr auto; gap:13px; align-items:center; padding:11px 12px; margin-bottom:8px; border-radius:18px; background:var(--surface); border:1px solid var(--border); width:100%; text-align:left;}
+  .row:active{transform:scale(.98);}
+  .row.cur{border-color:rgba(0,229,255,.45);}
+  .row .th{width:60px; height:60px; border-radius:14px; background:var(--surface-2); object-fit:cover; display:flex; align-items:center; justify-content:center;}
+  .row .th svg{width:26px; height:26px;}
+  .row .t1{font-size:16.5px; font-weight:800;}
+  .row .t2{font-size:14px; color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .row .mid{min-width:0;}
+  .pill{font-size:11.5px; font-weight:800; letter-spacing:.8px; padding:5px 9px; border-radius:8px; background:var(--accent); color:var(--on-accent);}
+  .pill.q{background:transparent; border:1px solid var(--border-2); color:var(--faint);}
+  .none{padding:34px 10px; text-align:center; color:var(--muted); font-size:16px; line-height:1.5;}
+  .clear{display:block; margin:6px auto 0; padding:12px; background:none; border:none; color:var(--faint); font-size:14px; font-weight:700;}
+  .msg p{font-size:16px; color:var(--muted); line-height:1.5; margin:10px 0;}
+  .msg b{color:var(--text);}
+
+  .toast{position:fixed; left:50%; top:calc(env(safe-area-inset-top) + 66px); transform:translate(-50%,-16px); max-width:88vw; background:var(--surface-3); border:1px solid var(--border-2); padding:13px 18px; border-radius:26px; font-size:15px; font-weight:700; text-align:center; opacity:0; transition:opacity .25s, transform .25s var(--ease); z-index:60; pointer-events:none;}
+  .toast.show{opacity:1; transform:translate(-50%,0);}
+  @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none !important; transition:none !important;}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <svg class="logo" viewBox="0 0 100 100" aria-hidden="true">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00F0FF"/><stop offset="1" stop-color="#0096FF"/></linearGradient></defs>
+      <rect width="100" height="100" rx="22" fill="#0D1216"/>
+      <path d="M50 12c-15.5 0-27.5 11.6-27.5 26.4C22.5 58 50 82 50 82s27.5-24 27.5-43.6C77.5 23.6 65.5 12 50 12z" fill="url(#lg)"/>
+      <circle cx="50" cy="38.5" r="16.5" fill="#0D1216"/>
+      <path d="M45 47.5V29.5h6.8a5.6 5.6 0 010 11.2H45" fill="none" stroke="#FFF" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="word">PARK<span>X</span></div>
+    <button class="hbtn" id="histBtn" aria-label="Recent spots">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#F2FBFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <b id="histCount" hidden>0</b>
+    </button>
+  </div>
+
+  <div class="stage" id="stage"></div>
+
+  <div class="actions">
+    <button class="big save" id="saveBtn">
+      <span class="ic" id="saveIc"></span>
+      <span class="tx"><b id="saveTitle">SAVE MY SPOT</b><small id="saveSub">One tap · exact GPS</small></span>
+    </button>
+    <button class="big walk" id="walkBtn">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4.5" r="1.8"/><path d="M9 21l2.2-6.2L9 12.5l1.6-4.6 3.3 1.7 2.6 2.4M10.6 7.9L7.5 10M13.9 9.6l.9 3.5 3.2 1.4M11.2 14.8L14 17.5V21"/></svg></span>
+      <span class="tx"><b>WALK TO MY BIKE</b><small id="walkSub">Opens Google Maps</small></span>
+    </button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet">
+  <div class="sh-head" id="shHead"></div>
+  <div class="sh-body" id="shBody"></div>
+  <div class="sh-foot" id="shFoot"></div>
+</div>
+<input type="file" id="cam" accept="image/*" capture="environment" hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   SETTINGS — safe to edit
+===================================================================== */
+const MAX_SPOTS  = 10;     // keeps the newest N spots; the oldest is deleted automatically
+const GOOD_ACC   = 6;      // stop refining once GPS is this accurate (metres)
+const REFINE_MS  = 10000;  // keep refining the GPS for at most this long after saving
+const PHOTO_MAX  = 1000;   // longest photo side in pixels (keeps each photo ~100–200 KB)
+const PHOTO_Q    = 0.72;   // JPEG quality
+/* =================== DO NOT EDIT BELOW THIS LINE ==================== */
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- icons ---------- */
+const I = {
+  pinPlus:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0112 3.5 6.5 6.5 0 0118.5 10c0 5.4-6.5 11-6.5 11z"/><path d="M12 7.5v5M9.5 10h5"/></svg>`,
+  check:`<svg viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`,
+  gps:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>`,
+  pin:`<svg viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11A6.5 6.5 0 0112 3.5 6.5 6.5 0 0118.5 10c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>`,
+  cam:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.6"/></svg>`,
+  trash:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>`,
+  walk:`<svg viewBox="0 0 24 24" fill="none" stroke="#04161C" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4.5" r="1.8"/><path d="M9 21l2.2-6.2L9 12.5l1.6-4.6 3.3 1.7 2.6 2.4M10.6 7.9L7.5 10M13.9 9.6l.9 3.5 3.2 1.4M11.2 14.8L14 17.5V21"/></svg>`
+};
+$("saveIc").innerHTML = I.pinPlus;
+
+/* ---------- storage: IndexedDB (photos stored as small JPEG blobs) ---------- */
+let _db;
+const openDB = () => _db || (_db = new Promise((res, rej) => {
+  const r = indexedDB.open("parkx", 1);
+  r.onupgradeneeded = () => r.result.createObjectStore("spots", { keyPath:"id" });
+  r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+}));
+async function allSpots(){
+  const d = await openDB();
+  return new Promise((res, rej) => { const q = d.transaction("spots").objectStore("spots").getAll(); q.onsuccess = () => res(q.result.sort((a, b) => b.t - a.t)); q.onerror = () => rej(q.error); });
+}
+async function addSpot(sp){
+  const d = await openDB();
+  await new Promise((res, rej) => { const t = d.transaction("spots", "readwrite"); t.objectStore("spots").put(sp); t.oncomplete = res; t.onerror = () => rej(t.error); });
+  const extra = (await allSpots()).slice(MAX_SPOTS);          // ring buffer: drop everything older than the newest MAX_SPOTS
+  if(extra.length) await new Promise(res => { const t = d.transaction("spots", "readwrite"); extra.forEach(x => t.objectStore("spots").delete(x.id)); t.oncomplete = res; });
+}
+async function patchSpot(id, patch){
+  const d = await openDB();
+  return new Promise((res, rej) => {
+    const t = d.transaction("spots", "readwrite"), s = t.objectStore("spots"), g = s.get(id);
+    g.onsuccess = () => { const cur = g.result; if(!cur){ res(null); return; } const nx = Object.assign(cur, patch); s.put(nx); t.oncomplete = () => res(nx); };
+    t.onerror = () => rej(t.error);
+  });
+}
+async function delSpots(ids){
+  const d = await openDB();
+  return new Promise(res => { const t = d.transaction("spots", "readwrite"); ids.forEach(i => t.objectStore("spots").delete(i)); t.oncomplete = res; });
+}
+
+let spots = [];
+async function reload(){ try{ spots = await allSpots(); }catch(e){ spots = []; toast("Storage is blocked in this browser mode"); } render(); }
+const cur = () => spots[0] || null;
+const byId = id => spots.find(s => s.id === id);
+
+/* photo blob -> object URL (cached, revoked when replaced) */
+const urls = new WeakMap();
+const urlOf = b => { if(!urls.has(b)) urls.set(b, URL.createObjectURL(b)); return urls.get(b); };
+const dropUrl = b => { if(b && urls.has(b)){ URL.revokeObjectURL(urls.get(b)); urls.delete(b); } };
+
+/* ---------- formatting ---------- */
+function ago(t){
+  const m = Math.floor((Date.now() - t) / 60000);
+  if(m < 1) return "Just now";
+  if(m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60), mm = m % 60;
+  if(h < 24) return mm ? `${h} h ${mm} min ago` : `${h} h ago`;
+  const d = Math.floor(h / 24); return d === 1 ? "1 day ago" : `${d} days ago`;
+}
+function whenStr(t){
+  const d = new Date(t), n = new Date(), y = new Date(); y.setDate(n.getDate() - 1);
+  const tm = d.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" });
+  const same = (a, b) => a.toDateString() === b.toDateString();
+  return same(d, n) ? `Today, ${tm}` : same(d, y) ? `Yesterday, ${tm}` : `${d.toLocaleDateString([], { day:"numeric", month:"short" })}, ${tm}`;
+}
+const accClass = a => a <= 10 ? "good" : a <= 25 ? "ok" : "weak";
+const accLabel = a => `GPS ±${Math.round(a)} m`;
+function distStr(m){ return m < 1000 ? `${Math.max(1, Math.round(m / 5) * 5)} m` : `${(m / 1000).toFixed(m < 10000 ? 1 : 0)} km`; }
+function haversine(a, b, c, d){
+  const R = 6371000, r = x => x * Math.PI / 180, dLa = r(c - a), dLo = r(d - b);
+  const h = Math.sin(dLa / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(dLo / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/* ---------- main screen ---------- */
+let here = null;      // my last known position (only fetched when permission is already granted)
+function render(){
+  const s = cur(), st = $("stage");
+  $("histCount").hidden = !spots.length; $("histCount").textContent = spots.length;
+  if(!s){
+    st.innerHTML = `<div class="empty-card">${I.pin}<b>No spot saved yet</b><p>When you park, tap <b>SAVE MY SPOT</b>.<br>It takes about 3 seconds.</p></div>`;
+    $("walkBtn").disabled = true; $("walkSub").textContent = "Save a spot first";
+    return;
+  }
+  $("walkBtn").disabled = false; $("walkSub").textContent = "Opens Google Maps · walking";
+  const d = here ? haversine(here.lat, here.lng, s.lat, s.lng) : null;
+  st.innerHTML = `<div class="card" id="card">
+    <div class="c-top"><span class="kick">PARKED</span><span class="acc ${accClass(s.acc)}">${accLabel(s.acc)}</span></div>
+    <div class="c-main"><div><div class="ago">${ago(s.t)}</div><div class="when">${whenStr(s.t)}</div></div>
+      ${s.photo ? `<img class="thumb" src="${urlOf(s.photo)}" alt="">` : ""}</div>
+    ${d !== null ? `<div class="dist">${I.pin}<span>${d < 15 ? "You're at your spot" : distStr(d) + " away"}</span>${d < 15 ? "" : "<small>straight line</small>"}</div>` : ""}
+    ${s.note ? `<div class="note">${esc(s.note)}</div>` : `<div class="note empty">No note — tap to add one</div>`}
+  </div>`;
+  $("card").onclick = () => openSpot(s.id, false);
+}
+setInterval(() => { if(cur() && !$("sheet").classList.contains("open")) render(); }, 30000);
+
+async function refreshHere(){
+  try{
+    if(!navigator.permissions || !navigator.geolocation) return;
+    const p = await navigator.permissions.query({ name:"geolocation" });
+    if(p.state !== "granted") return;
+    navigator.geolocation.getCurrentPosition(pos => { here = { lat:pos.coords.latitude, lng:pos.coords.longitude }; render(); }, () => {}, { enableHighAccuracy:false, maximumAge:60000, timeout:8000 });
+  }catch(e){}
+}
+document.addEventListener("visibilitychange", () => { if(!document.hidden){ render(); refreshHere(); } });
+
+/* ---------- SAVE: one tap, instant, then refine in the background ---------- */
+let locking = false;
+function setSaveUI(state, acc){
+  const b = $("saveBtn");
+  b.classList.toggle("busy", state === "find" || state === "refine"); b.classList.toggle("done", state === "done");
+  const t = $("saveTitle"), s = $("saveSub");
+  if(state === "find"){ t.textContent = "FINDING GPS…"; s.textContent = "Hold still for a moment"; $("saveIc").innerHTML = I.gps; }
+  else if(state === "refine"){ t.textContent = "SAVED"; s.textContent = `Sharpening GPS · ±${Math.round(acc)} m`; $("saveIc").innerHTML = I.gps; }
+  else if(state === "done"){ t.textContent = "SAVED ✓"; s.textContent = `Locked ±${Math.round(acc)} m`; $("saveIc").innerHTML = I.check; }
+  else { t.textContent = "SAVE MY SPOT"; s.textContent = "One tap · exact GPS"; $("saveIc").innerHTML = I.pinPlus; }
+}
+function startSave(){
+  if(locking) return;
+  if(!navigator.geolocation){ toast("This browser can't read your location"); return; }
+  locking = true; setSaveUI("find");
+  let spot = null, ready = false, best = Infinity, wid = null, killer = null, noFix = null;
+  const stop = () => {
+    if(!locking) return;
+    locking = false; clearTimeout(killer); clearTimeout(noFix);
+    if(wid !== null){ navigator.geolocation.clearWatch(wid); wid = null; }
+    if(spot){ setSaveUI("done", best); updateSheetAcc(); setTimeout(() => { if(!locking) setSaveUI("idle"); }, 1800); }
+    else setSaveUI("idle");
+  };
+  wid = navigator.geolocation.watchPosition(async pos => {
+    const c = pos.coords;
+    if(!spot){
+      spot = { id:Date.now(), t:Date.now(), lat:c.latitude, lng:c.longitude, acc:c.accuracy, note:"", photo:null };
+      best = c.accuracy;
+      try{ await addSpot(spot); }catch(e){ toast("Couldn't save — storage is blocked"); spot = null; stop(); return; }
+      ready = true; here = { lat:c.latitude, lng:c.longitude };
+      await reload(); openSpot(spot.id, true); setSaveUI("refine", best);
+      killer = setTimeout(stop, REFINE_MS);
+    }else if(ready && c.accuracy < best - 0.5){
+      best = c.accuracy;
+      const nx = await patchSpot(spot.id, { lat:c.latitude, lng:c.longitude, acc:c.accuracy });
+      if(nx){ const i = spots.findIndex(x => x.id === nx.id); if(i > -1) spots[i] = nx; render(); updateSheetAcc(); }
+      setSaveUI("refine", best);
+    }
+    if(ready && best <= GOOD_ACC) stop();
+  }, err => {
+    if(err.code === 1){ stop(); locationBlocked(); }
+    else if(!spot){ stop(); toast("No GPS fix. Step into the open and try again."); }
+  }, { enableHighAccuracy:true, maximumAge:0, timeout:20000 });
+  noFix = setTimeout(() => { if(locking && !spot){ stop(); toast("No GPS fix. Step into the open and try again."); } }, 16000);
+}
+$("saveBtn").onclick = startSave;
+
+function locationBlocked(){
+  sheet = { mode:"msg" };
+  $("shHead").innerHTML = head("Location is off", "ParkX can't read your position");
+  $("shBody").innerHTML = `<div class="msg"><p>Turn it on, then tap save again:</p><p><b>Settings → Privacy &amp; Security → Location Services</b> → make sure it's <b>On</b>, then open <b>Safari Websites</b> and choose <b>While Using the App</b>.</p><p>If the Home Screen app keeps asking, tap <b>Allow</b> each time.</p></div>`;
+  $("shFoot").innerHTML = `<button class="btn primary" id="okBtn">OK</button>`; $("okBtn").onclick = hideSheet; bindClose(); showSheet();
+}
+
+/* ---------- WALK: Google Maps walking directions to the newest spot ---------- */
+function walkTo(s){
+  if(!s){ toast("Save a spot first"); return; }
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=walking`;
+  const a = document.createElement("a"); a.href = url; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove();
+}
+$("walkBtn").onclick = () => walkTo(cur());
+
+/* ---------- sheets ---------- */
+let sheet = { mode:null, id:null, fresh:false };
+function showSheet(){ $("overlay").classList.add("open"); $("sheet").classList.add("open"); document.body.classList.add("lock"); }
+function hideSheet(){ $("overlay").classList.remove("open"); $("sheet").classList.remove("open"); document.body.classList.remove("lock"); if(document.activeElement) document.activeElement.blur(); sheet = { mode:null }; render(); }
+$("overlay").onclick = hideSheet;
+const head = (title, sub) => `<div class="grab"></div><div class="sh-top"><div><div class="sh-title">${title}</div>${sub ? `<div class="sh-sub">${sub}</div>` : ""}</div><button class="close" id="shClose">✕</button></div>`;
+const bindClose = () => { const c = $("shClose"); if(c) c.onclick = hideSheet; };
+
+/* spot details: note + photo (also shown right after saving) */
+function openSpot(id, fresh){
+  sheet = { mode:"spot", id, fresh };
+  const s = byId(id); if(!s) return;
+  $("shHead").innerHTML = head(fresh ? "Spot saved ✓" : "Parking spot", whenStr(s.t));
+  $("shBody").innerHTML = `
+    <div class="badge-row"><span class="badge" id="accBadge"></span><span class="refine" id="refine" hidden><i></i>Sharpening…</span></div>
+    <div id="weak"></div>
+    <div class="lbl">NOTE (OPTIONAL)</div>
+    <input class="field" id="noteIn" maxlength="120" placeholder="e.g. Basement 2, pillar C4" value="${esc(s.note)}" enterkeyhint="done" autocomplete="off">
+    <div class="lbl">PHOTO (OPTIONAL)</div>
+    <div id="photoArea"></div>
+    <div class="coords">${s.lat.toFixed(6)}, ${s.lng.toFixed(6)}</div>`;
+  $("shFoot").innerHTML = fresh
+    ? `<button class="btn primary" id="doneBtn">DONE</button>`
+    : `<button class="btn light" id="goBtn">WALK HERE</button><button class="btn ghost" id="delBtn" aria-label="Delete">${I.trash}</button>`;
+  bindClose();
+  updateSheetAcc(); renderPhotoArea(s);
+  let tm; $("noteIn").oninput = e => { clearTimeout(tm); const v = e.target.value; tm = setTimeout(async () => { const nx = await patchSpot(id, { note:v.trim() }); if(nx){ const i = spots.findIndex(x => x.id === id); if(i > -1) spots[i] = nx; } }, 250); };
+  $("noteIn").onkeydown = e => { if(e.key === "Enter") e.target.blur(); };
+  if(fresh) $("doneBtn").onclick = async () => { const v = $("noteIn").value.trim(); await patchSpot(id, { note:v }); await reload(); hideSheet(); };
+  else{
+    $("goBtn").onclick = () => walkTo(byId(id));
+    $("delBtn").onclick = async () => { if(confirm("Delete this parking spot?")){ const sp = byId(id); if(sp) dropUrl(sp.photo); await delSpots([id]); await reload(); hideSheet(); } };
+  }
+  showSheet();
+}
+function updateSheetAcc(){
+  if(sheet.mode !== "spot") return;
+  const s = byId(sheet.id), b = $("accBadge"); if(!s || !b) return;
+  b.className = `badge ${accClass(s.acc)}`; b.textContent = accLabel(s.acc);
+  $("refine").hidden = !(locking && sheet.fresh);
+  $("weak").innerHTML = s.acc > 25 && !(locking && sheet.fresh) ? `<div class="hint">Weak GPS here — basements and covered parking block the signal, so this point may be off. Add a <b>photo</b> or <b>note</b> (floor, pillar number, landmark) so you can still find it.</div>` : "";
+}
+function renderPhotoArea(s){
+  const a = $("photoArea"); if(!a) return;
+  if(!s.photo){
+    a.innerHTML = `<button class="photo-add" id="addPhoto">${I.cam}Take a photo</button>`;
+    $("addPhoto").onclick = () => $("cam").click();
+  }else{
+    a.innerHTML = `<div class="photo-box"><img src="${urlOf(s.photo)}" alt="Parking photo"></div>
+      <div class="photo-btns"><button id="rePhoto">Retake</button><button id="rmPhoto">Remove</button></div>`;
+    $("rePhoto").onclick = () => $("cam").click();
+    $("rmPhoto").onclick = async () => { dropUrl(s.photo); const nx = await patchSpot(s.id, { photo:null }); const i = spots.findIndex(x => x.id === s.id); if(nx && i > -1) spots[i] = nx; renderPhotoArea(nx || s); };
+  }
+}
+function loadImg(file){ return new Promise((res, rej) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => res({ im, u }); im.onerror = () => { URL.revokeObjectURL(u); rej(); }; im.src = u; }); }
+async function compress(file){
+  const { im, u } = await loadImg(file), sc = Math.min(1, PHOTO_MAX / Math.max(im.naturalWidth, im.naturalHeight));
+  const w = Math.round(im.naturalWidth * sc), h = Math.round(im.naturalHeight * sc), c = document.createElement("canvas");
+  c.width = w; c.height = h; c.getContext("2d").drawImage(im, 0, 0, w, h); URL.revokeObjectURL(u);
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(), "image/jpeg", PHOTO_Q));
+}
+$("cam").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if(!f || sheet.mode !== "spot") return;
+  const id = sheet.id;
+  try{
+    const blob = await compress(f), old = byId(id) && byId(id).photo; if(old) dropUrl(old);
+    const nx = await patchSpot(id, { photo:blob }); const i = spots.findIndex(x => x.id === id);
+    if(nx && i > -1) spots[i] = nx; if(sheet.mode === "spot" && sheet.id === id) renderPhotoArea(nx);
+    toast(`Photo saved · ${Math.round(blob.size / 1024)} KB`);
+  }catch(err){ toast("Couldn't read that photo"); }
+};
+
+/* history */
+$("histBtn").onclick = () => {
+  sheet = { mode:"hist" };
+  $("shHead").innerHTML = head("Recent spots", `${spots.length} of ${MAX_SPOTS} · oldest is replaced automatically`);
+  $("shBody").innerHTML = spots.length ? spots.map((s, k) => `<button class="row${k === 0 ? " cur" : ""}" data-id="${s.id}">
+      ${s.photo ? `<img class="th" src="${urlOf(s.photo)}" alt="">` : `<div class="th">${I.pin}</div>`}
+      <div class="mid"><div class="t1">${whenStr(s.t)}</div><div class="t2">${s.note ? esc(s.note) : "No note"} · ±${Math.round(s.acc)} m</div></div>
+      ${k === 0 ? `<span class="pill">CURRENT</span>` : `<span class="pill q">›</span>`}</button>`).join("")
+    + `<button class="clear" id="clearAll">Delete all spots</button>`
+    : `<div class="none">Nothing saved yet.<br>Your last ${MAX_SPOTS} parking spots will appear here.</div>`;
+  $("shFoot").innerHTML = "";
+  bindClose();
+  $("shBody").querySelectorAll(".row").forEach(r => r.onclick = () => openSpot(+r.dataset.id, false));
+  const ca = $("clearAll"); if(ca) ca.onclick = async () => { if(confirm(`Delete all ${spots.length} saved spots and photos?`)){ spots.forEach(s => dropUrl(s.photo)); await delSpots(spots.map(s => s.id)); await reload(); hideSheet(); } };
+  showSheet();
+};
+
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2600); }
+
+/* ---------- start ---------- */
+reload().then(refreshHere);
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){ navigator.serviceWorker.register("sw.js").catch(() => {}); }
+</script>
+</body>
+</html>
